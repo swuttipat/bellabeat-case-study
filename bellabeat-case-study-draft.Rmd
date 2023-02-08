@@ -1,0 +1,153 @@
+---
+title: "bellabeat-casestudy"
+author: "Wuttipat S."
+date: "2023-02-06"
+output: html_document
+---
+# Header 1
+## Header 2
+### Header 3
+#### Header 4
+##### Header 5
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Introduction
+Bellabeat, a high-tech manufacturer of health-focused
+products for women. Bellabeat is a successful small company, but they have the potential to become a larger player in the global smart device market. Urška Sršen, cofounder and Chief Creative Officer of Bellabeat, believes that analyzing smart device fitness data could help unlock new growth opportunities for the company. You have been asked to focus on one of Bellabeat’s products and analyze smart device data to gain insight into how consumers are using their smart devices. The insights you discover will then help guide marketing strategy for the company. You will present your analysis to the Bellabeat executive team along with your high-level recommendations for Bellabeat’s marketing strategy.
+
+#### Product
+* Bellabeat app: The Bellabeat app provides users with health data related to their activity, sleep, stress, menstrual cycle, and mindfulness habits. This data can help users better understand their current habits and make healthy decisions. The Bellabeat app connects to their line of smart wellness products.
+* Leaf: Bellabeat’s classic wellness tracker can be worn as a bracelet, necklace, or clip. The Leaf tracker connects to the Bellabeat app to track activity, sleep, and stress.
+* Time: This wellness watch combines the timeless look of a classic timepiece with smart technology to track user
+activity, sleep, and stress. The Time watch connects to the Bellabeat app to provide you with insights into your daily wellness.
+* Spring: This is a water bottle that tracks daily water intake using smart technology to ensure that you are appropriately hydrated throughout the day. The Spring bottle connects to the Bellabeat app to track your hydration levels.
+* Bellabeat membership: Bellabeat also offers a subscription-based membership program for users. Membership gives users 24/7 access to fully personalized guidance on nutrition, activity, sleep, health and beauty, and mindfulness based on their lifestyle and goals.
+
+#### Ask
+1. What are some trends in smart device usage?
+2. How could these trends apply to Bellabeat customers?
+3. How could these trends help influence Bellabeat marketing strategy?
+
+#### Prepare
+FitBit Fitness Tracker Data (CC0: Public Domain, dataset made available through Mobius): This Kaggle data set contains personal fitness tracker from thirty fitbit users. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits.
+* Where is your data stored?
+* How is the data organized? Is it in long or wide format?
+* Are there issues with bias or credibility in this data? Does your data ROCCC?
+* How are you addressing licensing, privacy, security, and accessibility?
+* How did you verify the data’s integrity?
+* How does it help you answer your question?
+* Are there any problems with the data?
+
+#### Process
+Installing and loading common packages and libraries
+```{r}
+# install.packages('tidyverse')
+library(tidyverse)
+library(lubridate)
+```
+
+Loading .csv files
+Since there are 18 csv files those can categories into 3 type 
+1. Daily
+2. Hourly
+3. Minutes
+
+In this case I only pick *daily* and *hourly* for my analysis
+```{r}
+activity <- read.csv("dailyActivity_merged.csv")
+sleep <- read.csv("sleepDay_merged.csv")
+calories <- read.csv("dailyCalories_merged.csv")
+intensities <- read.csv("dailyIntensities_merged.csv")
+steps <- read.csv("dailySteps_merged.csv")
+
+hourly_calories <- read.csv("hourlyCalories_merged.csv")
+hourly_intensities <- read.csv("hourlyIntensities_merged.csv")
+hourly_steps <- read.csv("hourlySteps_merged.csv")
+```
+
+Make columns name into lowercase of convinent.
+```{r}
+names(activity) <- tolower(names(activity))
+names(sleep) <- tolower(names(sleep))
+names(calories) <- tolower(names(calories))
+names(intensities) <- tolower(names(intensities))
+names(steps) <- tolower(names(steps))
+
+names(hourly_calories) <- tolower(names(hourly_calories))
+names(hourly_intensities) <- tolower(names(hourly_intensities))
+names(hourly_steps) <- tolower(names(hourly_steps))
+```
+
+Change the name of a specific column to "date"
+```{r}
+activity <- activity %>% 
+  rename(date = activitydate)
+
+sleep <- sleep %>% 
+  rename(date = sleepday)
+
+calories <- calories %>% 
+  rename(date = activityday)
+
+intensities <- intensities %>% 
+  rename(date = activityday)
+
+steps <- steps %>% 
+  rename(date = activityday)
+```
+
+For hourly columns activityhour is *datetime character* type, let split into two columns *date* and *time*
+```{r}
+hourly_calories$date = as.Date(hourly_calories$activityhour, format = "%m/%d/%Y %I:%M:%S %p")
+hourly_calories$time = format(as.POSIXct(hourly_calories$activityhour, format = "%m/%d/%Y %I:%M:%S %p"), format = "%H:%M:%S")
+
+hourly_intensities$date = as.Date(hourly_intensities$activityhour, format = "%m/%d/%Y %I:%M:%S %p")
+hourly_intensities$time = format(as.POSIXct(hourly_intensities$activityhour, format = "%m/%d/%Y %I:%M:%S %p"), format = "%H:%M:%S")
+
+hourly_steps$date = as.Date(hourly_steps$activityhour, format = "%m/%d/%Y %I:%M:%S %p")
+hourly_steps$time = format(as.POSIXct(hourly_steps$activityhour, format = "%m/%d/%Y %I:%M:%S %p"), format = "%H:%M:%S")
+```
+
+
+
+Take a quick tour through the imported tables.
+```{r}
+print("activity")
+str(activity)
+print("sleep")
+str(sleep)
+print("calories")
+str(calories)
+print("intensities")
+str(intensities)
+print("steps")
+str(steps)
+
+print("hourly_calories")
+str(hourly_calories)
+print("hourly_intensities")
+str(hourly_intensities)
+print("hourly_steps")
+str(hourly_steps)
+```
+
+Verify all tables contain all of volunteer
+- All tables contain 33 consented user except *sleep* which mean some of them take the device off while sleep.
+```{r}
+n_distinct(activity$id)
+n_distinct(calories$id)
+n_distinct(hourly_calories$id)
+n_distinct(hourly_intensities$id)
+n_distinct(hourly_steps$id)
+n_distinct(intensities$id)
+n_distinct(sleep$id)
+n_distinct(steps$id)
+```
+
+

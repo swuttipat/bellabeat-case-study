@@ -1,0 +1,248 @@
+---
+title: "Bellabeat-Case-Study"
+author: "Wuttipat S."
+date: "2023-02-06"
+output: github_document
+---
+
+## Introduction
+Bellabeat, a high-tech manufacturer of health-focused
+products for women. Bellabeat is a successful small company, but they have the potential to become a larger player in the global smart device market. Urška Sršen, cofounder and Chief Creative Officer of Bellabeat, believes that analyzing smart device fitness data could help unlock new growth opportunities for the company. You have been asked to focus on one of Bellabeat’s products and analyze smart device data to gain insight into how consumers are using their smart devices. The insights you discover will then help guide marketing strategy for the company. You will present your analysis to the Bellabeat executive team along with your high-level recommendations for Bellabeat’s marketing strategy.
+
+#### Product
+* Bellabeat app: The Bellabeat app provides users with health data related to their activity, sleep, stress, menstrual cycle, and mindfulness habits. This data can help users better understand their current habits and make healthy decisions. The Bellabeat app connects to their line of smart wellness products.
+* Leaf: Bellabeat’s classic wellness tracker can be worn as a bracelet, necklace, or clip. The Leaf tracker connects to the Bellabeat app to track activity, sleep, and stress.
+* Time: This wellness watch combines the timeless look of a classic timepiece with smart technology to track user
+activity, sleep, and stress. The Time watch connects to the Bellabeat app to provide you with insights into your daily wellness.
+* Spring: This is a water bottle that tracks daily water intake using smart technology to ensure that you are appropriately hydrated throughout the day. The Spring bottle connects to the Bellabeat app to track your hydration levels.
+* Bellabeat membership: Bellabeat also offers a subscription-based membership program for users. Membership gives users 24/7 access to fully personalized guidance on nutrition, activity, sleep, health and beauty, and mindfulness based on their lifestyle and goals.
+
+### Ask
+###### A clear statement of the business task
+1. What are some trends in smart device usage?
+2. How could these trends apply to Bellabeat customers?
+3. How could these trends help influence Bellabeat marketing strategy?
+
+## Business task
+Finding a trend in digital health and wellness of wearable devices for offering Bellabeat more advanced features that led to increasing popularity of their customers for growing trend of smart health devices user.
+
+### Prepare
+###### A description of all data sources used
+FitBit Fitness Tracker Data (CC0: Public Domain, dataset made available through Mobius): This Kaggle data set contains personal fitness tracker from thirty fitbit users. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits.
+* Where is your data stored?
+* How is the data organized? Is it in long or wide format?
+* Are there issues with bias or credibility in this data? Does your data ROCCC?
+* How are you addressing licensing, privacy, security, and accessibility?
+* How did you verify the data’s integrity?
+* How does it help you answer your question?
+* Are there any problems with the data?
+
+### Process
+###### Documentation of any cleaning or manipulation of data
+Installing and loading common packages and libraries
+```{r}
+# install.packages('tidyverse')
+library(tidyverse)
+library(lubridate)
+```
+
+Loading .csv files
+##### Since there are 18 csv files those can categories into 3 type
+1. Daily
+2. Hourly
+3. Minutes
+In this case I only pick *daily* and *hourly* for my analysis
+```{r}
+activity <- read.csv("dailyActivity_merged.csv")
+sleep <- read.csv("sleepDay_merged.csv")
+calories <- read.csv("dailyCalories_merged.csv")
+intensities <- read.csv("dailyIntensities_merged.csv")
+steps <- read.csv("dailySteps_merged.csv")
+```
+
+Make columns name into lowercase of convinent.
+```{r}
+names(activity) <- tolower(names(activity))
+names(sleep) <- tolower(names(sleep))
+names(calories) <- tolower(names(calories))
+names(intensities) <- tolower(names(intensities))
+names(steps) <- tolower(names(steps))
+```
+
+Change the name of a specific column to "date"
+```{r}
+activity <- activity %>% 
+  rename(date = activitydate)
+
+sleep <- sleep %>% 
+  rename(date = sleepday)
+
+calories <- calories %>% 
+  rename(date = activityday)
+
+intensities <- intensities %>% 
+  rename(date = activityday)
+
+steps <- steps %>% 
+  rename(date = activityday)
+```
+
+Formatting *date string* into *date type* data
+```{r}
+activity$date <- as.Date(activity$date, format = "%m/%d/%Y")
+calories$date <- as.Date(calories$date, format = "%m/%d/%Y")
+intensities$date <- as.Date(intensities$date, format = "%m/%d/%Y")
+steps$date <- as.Date(steps$date, format = "%m/%d/%Y")
+
+sleep$date <- sleep$date %>% 
+  as.POSIXct(format = "%m/%d/%Y %I:%M:%S %p") %>% 
+  as.Date(format = "%m/%d/%Y")
+
+```
+
+Take a quick tour through imported tables.
+```{r}
+print("activity")
+str(activity)
+print("sleep")
+str(sleep)
+print("calories")
+str(calories)
+print("intensities")
+str(intensities)
+print("steps")
+str(steps)
+```
+
+Verify all tables contain all of volunteer
+- All tables contain 33 consented user except *sleep* which mean some of them take the device off while sleep.
+```{r}
+n_distinct(activity$id)
+n_distinct(calories$id)
+n_distinct(intensities$id)
+n_distinct(sleep$id)
+n_distinct(steps$id)
+```
+#### Merging data
+- Merge all dataframe into one by using *id* and *date* as keys
+- By merging data, now we can visualize all important features that store in different tables.
+- Since *sleep* having 24 unique user, I use left-join to keep all identical user for analysis.
+- I only merge *activity* and *sleep* to activity already contains other table's columns with avoid columns duplication after merging all available tables.
+```{r}
+
+merge_df <- activity
+#merge_df <- left_join(merge-df, calories, by = c("id","date"))
+#merge_df <- left_join(merge_df, intensities, by = c("id", "date"))
+merge_df <- left_join(merge_df, sleep, by = c("id", "date"))
+#merge_df <- left_join(merge_df, steps, by = c("id", "date"))
+
+# See structure inside merged dataframe
+str(merge_df)
+summary(merge_df)
+```
+
+
+Since I assume consented users mostly have work schedule as 9 am to 5 pm, so their activity likely a weekly routine.
+- Let transform date into new column *weekday*
+```{r}
+merge_df$weekday = wday(merge_df$date, label = TRUE, abbr = FALSE, week_start = 1)
+```
+
+
+## Analyze and Share
+###### A summary of your analysis
+###### Supporting visualizations and key findings
+
+### Visualize
+```{r}
+# Calories correlation
+ggplot(merge_df, aes(x=totalsteps, y=calories)) + geom_point(aes(color = calories)) + geom_smooth()
+ggplot(merge_df, aes(x=totaldistance, y=calories)) + geom_point(aes(color = calories)) + geom_smooth()
+ggplot(merge_df, aes(x=veryactivedistance, y=calories)) + geom_point(aes(color = calories)) + geom_smooth()
+ggplot(merge_df, aes(x=sedentaryactivedistance, y=calories)) + geom_point(aes(color = calories))
+ggplot(merge_df, aes(x=totalminutesasleep, y=calories)) + geom_point(aes(color = calories)) + geom_smooth()
+ggplot(merge_df, aes(x=totaltimeinbed, y=calories)) + geom_point(aes(color = calories)) + geom_smooth()
+```
+* There high correlation betwwen *calories* and *(steps, totaldistance, veryactivedistance)*
+
+
+##### Weekday's activity
+- By seeing weekly behvioring, I expect to see relational different between weekend and weekday
+```{r}
+# Grouping dataframe by weekday
+weekday_df = merge_df %>% 
+  group_by(weekday) %>% 
+  drop_na() %>% 
+  summarise(
+    totalsteps = mean(totalsteps),
+    totaldistance = mean(totaldistance),
+    trackerdistance = mean(trackerdistance),
+    veryactiveminutes = mean(veryactiveminutes),
+    fairlyactiveminutes = mean(fairlyactiveminutes),
+    lightlyactiveminutes = mean(lightlyactiveminutes),
+    sedentaryminutes = mean(sedentaryminutes),
+    calories = mean(calories),
+    totalminutesasleep = mean(totalminutesasleep),
+    totaltimeinbed = mean(totaltimeinbed)
+  )
+
+```
+
+```{r}
+# Plot Weekday's activity
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=totalsteps, fill=weekday)) + labs(title="Average Steps", y="Average Steps")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=totaldistance, fill=weekday)) + labs(title = "Average Distance", y="Average Distance")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=veryactiveminutes, fill=weekday)) + labs(title = "Average Very Active Minutes")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=fairlyactiveminutes, fill=weekday)) + labs(title = "Average Fairy Active Minutes")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=lightlyactiveminutes, fill=weekday)) + labs(title = "Average Lightly Active Minutes")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=sedentaryminutes, fill=weekday)) + labs(title = "Average Sedentary Minutes")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=calories, fill=weekday)) + labs(title = "Average Calories")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=totalminutesasleep, fill=weekday)) + labs(title = "Average Minutes Sleep")
+ggplot(weekday_df) + geom_bar(stat = "identity", aes(x=weekday, y=totaltimeinbed, fill=weekday)) + labs(title = "Average Minutes Bedtinme")
+```
+- An average sedentary minutes happen during workday more the holiday which mean sample are having long sitting for work.
+
+#### Let explore for other possible relation throgh metrix plot.
+```{r}
+merge_df %>%
+  select(totalsteps,totaldistance,calories, totalminutesasleep) %>% 
+  pairs(main = "Scatterplot Matrix with Regression Lines",
+        panel = function(x, y, ...) {
+        points(x, y, ...)
+        abline(lm(y ~ x), col = "gray", lwd = 2)
+      })
+```
+```{r}
+merge_df %>%
+  select(totalminutesasleep,totalsteps, calories, totaltimeinbed) %>% 
+  pairs(main = "Scatterplot Matrix with Regression Lines",
+        panel = function(x, y, ...) {
+        points(x, y, ...)
+        abline(lm(y ~ x), col = "gray", lwd = 2)
+      })
+```
+- High correlation between *totalminutesasleep* and *totaltimeinbed*
+```{r}
+merge_df %>%
+  select(totalminutesasleep,veryactiveminutes, fairlyactiveminutes, lightlyactiveminutes, sedentaryminutes) %>% 
+  pairs(main = "Scatterplot Matrix with Regression Lines",
+        panel = function(x, y, ...) {
+        points(x, y, ...)
+        abline(lm(y ~ x), col = "gray", lwd = 2)
+      })
+```
+
+```{r}
+ggplot(data = merge_df, aes(x=sedentaryminutes, y=totalminutesasleep)) + geom_point() + geom_smooth()
+```
+- Slightly negative correlation between *sedentaryminutes* and *totalminutesasleep*
+
+## Summarize of the analysis results
+1. More user active more calories they burned.
+2. Our user mostly work at office where they have to sitting all the time which mean spending their energy less, cause them harder to sleep at night.
+3. Time spend in bed will led to longer you sleep.
+
+## Suggestion of the Bellabeat app
+1. Bellabeat should provides personalized guidance based on user's lifestyle and goals.
+2. Notify wearer when they sitting for too long. Encourage them for take a walk or make a light exercise.
+3. Remind the device owner about time to go bed for their suitable sleeping hour and keeping their healthy behavior.
