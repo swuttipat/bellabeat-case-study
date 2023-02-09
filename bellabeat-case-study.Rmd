@@ -2,7 +2,7 @@
 title: "Bellabeat-Case-Study"
 author: "Wuttipat S."
 date: "2023-02-06"
-output: github_document
+output: html_document
 ---
 
 ## Introduction
@@ -60,7 +60,7 @@ intensities <- read.csv("dailyIntensities_merged.csv")
 steps <- read.csv("dailySteps_merged.csv")
 ```
 
-Make columns name into lowercase of convinent.
+Make columns name into lowercase of convenient.
 ```{r}
 names(activity) <- tolower(names(activity))
 names(sleep) <- tolower(names(sleep))
@@ -71,6 +71,7 @@ names(steps) <- tolower(names(steps))
 
 Change the name of a specific column to "date"
 ```{r}
+# Change the name of a specific column to "date"
 activity <- activity %>% 
   rename(date = activitydate)
 
@@ -209,7 +210,7 @@ merge_df %>%
   pairs(main = "Scatterplot Matrix with Regression Lines",
         panel = function(x, y, ...) {
         points(x, y, ...)
-        abline(lm(y ~ x), col = "gray", lwd = 2)
+        abline(lm(y ~ x), col = "red", lwd = 2)
       })
 ```
 ```{r}
@@ -218,7 +219,7 @@ merge_df %>%
   pairs(main = "Scatterplot Matrix with Regression Lines",
         panel = function(x, y, ...) {
         points(x, y, ...)
-        abline(lm(y ~ x), col = "gray", lwd = 2)
+        abline(lm(y ~ x), col = "red", lwd = 2)
       })
 ```
 - High correlation between *totalminutesasleep* and *totaltimeinbed*
@@ -228,7 +229,7 @@ merge_df %>%
   pairs(main = "Scatterplot Matrix with Regression Lines",
         panel = function(x, y, ...) {
         points(x, y, ...)
-        abline(lm(y ~ x), col = "gray", lwd = 2)
+        abline(lm(y ~ x), col = "red", lwd = 2)
       })
 ```
 
